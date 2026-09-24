@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SOS List Formatter</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    padding: 24px;
+    background: #f5f5f5;
+    color: #212121;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 {
+    color: #2e5847;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+  }
+  .subtitle {
+    color: #666;
+    margin: 0 0 24px 0;
+    font-size: 14px;
+  }
+  .card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #2e5847;
+  }
+  .row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  label {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  select, input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+  }
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    font-size: 12px;
+    resize: vertical;
+  }
+  .textarea-group {
+    margin-bottom: 12px;
+  }
+  .textarea-group label {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+  button {
+    background: #2e5847;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #234437; }
+  button:disabled { background: #999; cursor: not-allowed; }
+  button.secondary {
+    background: #e0e0e0;
+    color: #333;
+  }
+  button.secondary:hover { background: #ccc; }
+  .buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .results {
+    display: none;
+  }
+  .results.visible { display: block; }
+  .status-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .status-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .status-table td:first-child {
+    font-weight: 600;
+  }
+  .status-table td:last-child {
+    text-align: right;
+    font-family: "SF Mono", Monaco, monospace;
+  }
+  .warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .error {
+    background: #f8d7da;
+    border: 1px solid #dc3545;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .success {
+    background: #d4edda;
+    border: 1px solid #28a745;
+    color: #155724;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  details {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  summary {
+    cursor: pointer;
+    color: #2e5847;
+    font-weight: 600;
+  }
+  .badge {
+    background: #2e5847;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-left: 8px;
+  }
+  .steps {
+    counter-reset: step;
+    padding-left: 0;
+    list-style: none;
+  }
+  .steps li {
+    counter-increment: step;
+    padding-left: 32px;
+    position: relative;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    background: #2e5847;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-weight: bold;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>SOS List Formatter</h1>
+  <p class="subtitle">Cleans raw Secretary of State registered-agent exports into the standardized CSV format for the resignation automation <code>--sos-verify</code> flag.</p>
+
+  <div class="card">
+    <h2>How to use</h2>
+    <ol class="steps">
+      <li>Select the state you're pulling.</li>
+      <li>Go to the state's SOS website and search for Registered Agents Inc.</li>
+      <li>Copy all Active results, paste into the Active box below.</li>
+      <li>Copy all Inactive results, paste into the Inactive box below.</li>
+      <li>Click Process, review the counts, then click Download.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label for="state">State:</label>
+      <select id="state">
+        <option value="RI">Rhode Island (RI)</option>
+        <option value="OR">Oregon (OR)</option>
+      </select>
+      <label for="listDate">List date:</label>
+      <input type="date" id="listDate">
+      <span class="hint">Auto-filled to today. Filename uses this date.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="textarea-group">
+      <label for="activePaste">Active entities (paste raw text from SOS website)</label>
+      <textarea id="activePaste" placeholder="Paste the active entities search results here..."></textarea>
+      <div class="hint">Leave blank if the state only provides one combined list.</div>
+    </div>
+    <div class="textarea-group">
+      <label for="inactivePaste">Inactive entities (paste raw text from SOS website)</label>
+      <textarea id="inactivePaste" placeholder="Paste the inactive entities search results here..."></textarea>
+      <div class="hint">Leave blank if the state only provides one combined list.</div>
+    </div>
+    <div class="buttons">
+      <button id="processBtn">Process</button>
+      <button id="clearBtn" class="secondary">Clear</button>
+    </div>
+  </div>
+
+  <div id="results" class="results">
+    <div class="card">
+      <h2>Results <span class="badge" id="totalCount">0</span></h2>
+      <table class="status-table" id="statusTable"></table>
+      <div id="parseWarnings"></div>
+      <div id="downloadArea"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  document.getElementById("listDate").value = `${yyyy}-${mm}-${dd}`;
+});
+
+const RAI_NAMES = new Set([
+  "REGISTERED AGENTS INC",
+  "REGISTERED AGENTS INC.",
+  "REGISTERED AGENTS INC,",
+]);
+
+function mapStatus(inactiveStatus) {
+  const s = (inactiveStatus || "").trim().toLowerCase();
+  if (!s) return "ACT";
+  if (s.includes("revocation")) return "REV_NOTICE";
+  if (s.includes("revoked")) return "REV";
+  if (s.includes("dissolv")) return "DISSOLVED";
+  if (s.includes("cancel")) return "CANCELLED";
+  if (s.includes("withdraw")) return "WITHDRAWN";
+  if (s.includes("conver")) return "CONVERSION";
+  if (s.includes("expir")) return "EXPIRED";
+  if (s.includes("bankrupt")) return "BANKRUPTCY";
+  if (s.includes("merged")) return "MERGED";
+  if (s.includes("name reservation")) return "NAME_RESERVATION";
+  return s.toUpperCase().replace(/\s+/g, "_");
+}
+
+function escapeCSV(val) {
+  const s = String(val ?? "");
+  if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
+    return "\"" + s.replace(/"/g, "\"\"") + "\"";
+  }
+  return s;
+}
+
+function parseCSVLine(line) {
+  const fields = [];
+  let i = 0;
+  while (i < line.length) {
+    if (line[i] === "\"") {
+      let val = "";
+      i++;
+      while (i < line.length) {
+        if (line[i] === "\"" && line[i + 1] === "\"") {
+          val += "\"";
+          i += 2;
+        } else if (line[i] === "\"") {
+          i++;
+          break;
+        } else {
+          val += line[i++];
+        }
+      }
+      fields.push(val);
+      if (line[i] === ",") i++;
+    } else {
+      const end = line.indexOf(",", i);
+      if (end === -1) {
+        fields.push(line.slice(i).trim());
+        break;
+      } else {
+        fields.push(line.slice(i, end).trim());
+        i = end + 1;
+      }
+    }
+  }
+  return fields;
+}
+
+function detectFormat(raw) {
+  const firstDataLine = raw.split("\n").find(l => l.trim() && !l.startsWith("Agent Name"));
+  if (!firstDataLine) return "unknown";
+  if (firstDataLine.includes("\t")) return "tsv";
+  if (firstDataLine.includes(",")) return "csv";
+  return "unknown";
+}
+
+function isRAIName(name) {
+  const n = (name || "").trim();
+  return RAI_NAMES.has(n) || n.startsWith("REGISTERED AGENTS INC");
+}
+
+function parseTSV(text) {
+  const records = [];
+  const warnings = [];
+  const lines = text.split("\n").map(l => l.replace(/\r$/, ""));
+
+  let headerIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("Agent Name")) { headerIdx = i; break; }
+  }
+  const dataLines = (headerIdx === -1 ? lines : lines.slice(headerIdx + 1))
+    .filter(l => l.trim() !== "");
+
+  let i = 0;
+  while (i < dataLines.length) {
+    const line1 = dataLines[i];
+    const fields1 = line1.split("\t");
+    const agentName = (fields1[0] || "").trim();
+
+    if (!isRAIName(agentName)) {
+      i++;
+      continue;
+    }
+
+    const entityName = (fields1[1] || "").trim();
+    let addressPart1 = (fields1[2] || "").trim();
+    let idNumber = "";
+    let inactiveStatus = "";
+
+    const nextLine = dataLines[i + 1];
+    const nextIsContinuation = nextLine && !isRAIName((nextLine.split("\t")[0] || "").trim());
+
+    if (nextIsContinuation) {
+      const fields2 = nextLine.split("\t");
+      idNumber = (fields2[1] || "").trim();
+      inactiveStatus = (fields2[2] || "").trim();
+      i += 2;
+    } else {
+      idNumber = (fields1[3] || "").trim();
+      inactiveStatus = (fields1[4] || "").trim();
+      i += 1;
+    }
+
+    if (!entityName) {
+      warnings.push(`Row ${i}: no entity name found`);
+      continue;
+    }
+
+    records.push({
+      entityName,
+      registryNumber: idNumber,
+      entityStatus: mapStatus(inactiveStatus),
+    });
+  }
+
+  return { records, warnings };
+}
+
+function parseCSV(text) {
+  const records = [];
+  const warnings = [];
+
+  const headerStart = text.indexOf("Agent Name");
+  if (headerStart === -1) {
+    warnings.push("Could not find 'Agent Name' header row");
+    return { records, warnings };
+  }
+  const headerEnd = text.indexOf("\n", headerStart);
+  const body = text.slice(headerEnd + 1);
+
+  let rowBuffer = "";
+  let inQuote = false;
+
+  const processRow = (row, rowIdx) => {
+    if (!row.trim()) return;
+    const fields = parseCSVLine(row);
+    const agentName = (fields[0] || "").trim().replace(/,$/, "");
+    const entityName = (fields[1] || "").trim();
+    const idNumber = (fields[3] || "").trim();
+    const inactiveStatus = (fields[4] || "").trim();
+
+    if (!isRAIName(agentName)) return;
+    if (!entityName) {
+      warnings.push(`Row ${rowIdx}: no entity name found`);
+      return;
+    }
+
+    records.push({
+      entityName,
+      registryNumber: idNumber,
+      entityStatus: mapStatus(inactiveStatus),
+    });
+  };
+
+  let rowIdx = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "\"") {
+      inQuote = !inQuote;
+      rowBuffer += ch;
+    } else if (ch === "\n" && !inQuote) {
+      rowIdx++;
+      processRow(rowBuffer, rowIdx);
+      rowBuffer = "";
+    } else {
+      rowBuffer += ch;
+    }
+  }
+  if (rowBuffer.trim()) {
+    rowIdx++;
+    processRow(rowBuffer, rowIdx);
+  }
+
+  return { records, warnings };
+}
+
+// Oregon format: already in the target column structure. Tab-separated table
+// paste from the SOS website. Columns: Record No, Entity Type, Entity Status,
+// Assoc Type, Registry Number, Name Status, Name. No Agent Name column since
+// OR pre-filters by the searched agent.
+function parseOR(text) {
+  const records = [];
+  const warnings = [];
+  const lines = text.split("\n").map(l => l.replace(/\r$/, ""));
+
+  let headerIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim().startsWith("Record No")) { headerIdx = i; break; }
+  }
+  const dataLines = (headerIdx === -1 ? lines : lines.slice(headerIdx + 1))
+    .filter(l => l.trim() !== "");
+
+  dataLines.forEach((line, idx) => {
+    const fields = line.split("\t").map(f => f.trim());
+    if (fields.length < 7) {
+      warnings.push(`Row ${idx + 1}: expected 7 columns, got ${fields.length} — skipped`);
+      return;
+    }
+    const [recordNo, entityType, entityStatus, assocType, registryNumber, nameStatus, name] = fields;
+    if (!name) {
+      warnings.push(`Row ${idx + 1}: no entity name — skipped`);
+      return;
+    }
+    records.push({
+      entityName: name,
+      registryNumber: registryNumber,
+      entityStatus: entityStatus || "ACT",
+    });
+  });
+
+  return { records, warnings };
+}
+
+function parseSection(text, state) {
+  if (!text || !text.trim()) return { records: [], warnings: [] };
+  if (state === "OR") return parseOR(text);
+  const format = detectFormat(text);
+  if (format === "csv") return parseCSV(text);
+  if (format === "tsv") return parseTSV(text);
+  return { records: [], warnings: ["Could not detect format (not tab or comma separated)"] };
+}
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  document.getElementById("activePaste").value = "";
+  document.getElementById("inactivePaste").value = "";
+  document.getElementById("results").classList.remove("visible");
+});
+
+document.getElementById("processBtn").addEventListener("click", () => {
+  const activeText = document.getElementById("activePaste").value;
+  const inactiveText = document.getElementById("inactivePaste").value;
+  const state = document.getElementById("state").value;
+  const listDate = document.getElementById("listDate").value;
+
+  if (!activeText.trim() && !inactiveText.trim()) {
+    alert("Paste at least one list (Active or Inactive) before processing.");
+    return;
+  }
+  if (!listDate) {
+    alert("Please select a list date.");
+    return;
+  }
+
+  const activeResult = parseSection(activeText, state);
+  const inactiveResult = parseSection(inactiveText, state);
+
+  const seen = new Set();
+  const allRecords = [];
+  for (const rec of [...activeResult.records, ...inactiveResult.records]) {
+    const key = rec.registryNumber || `${rec.entityName}||${rec.entityStatus}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    allRecords.push(rec);
+  }
+
+  const warnings = [...activeResult.warnings, ...inactiveResult.warnings];
+
+  const statusCounts = {};
+  allRecords.forEach(r => {
+    statusCounts[r.entityStatus] = (statusCounts[r.entityStatus] || 0) + 1;
+  });
+
+  const resultsDiv = document.getElementById("results");
+  const statusTable = document.getElementById("statusTable");
+  const totalCount = document.getElementById("totalCount");
+  const warningsDiv = document.getElementById("parseWarnings");
+  const downloadArea = document.getElementById("downloadArea");
+
+  totalCount.textContent = `${allRecords.length} records`;
+  statusTable.innerHTML = "";
+
+  const rows = [
+    ["Active list rows parsed", activeResult.records.length],
+    ["Inactive list rows parsed", inactiveResult.records.length],
+    ["Total after deduplication", allRecords.length],
+    ["", ""],
+  ];
+  Object.entries(statusCounts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([status, count]) => rows.push([status, count]));
+
+  rows.forEach(([label, count]) => {
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td");
+    const td2 = document.createElement("td");
+    td1.textContent = label;
+    td2.textContent = count;
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    statusTable.appendChild(tr);
+  });
+
+  warningsDiv.innerHTML = "";
+  const noId = allRecords.filter(r => !r.registryNumber);
+  if (noId.length > 0) {
+    const warn = document.createElement("div");
+    warn.className = "warning";
+    warn.innerHTML = `<strong>${noId.length} records have no Registry Number</strong> — these will not match in the SOS cross-check and will be flagged as "no filing number" during the run.`;
+    warningsDiv.appendChild(warn);
+  }
+
+  if (warnings.length > 0) {
+    const w = document.createElement("details");
+    const s = document.createElement("summary");
+    s.textContent = `${warnings.length} parsing warnings`;
+    w.appendChild(s);
+    warnings.forEach(msg => {
+      const p = document.createElement("div");
+      p.textContent = msg;
+      p.style.fontSize = "12px";
+      p.style.color = "#666";
+      p.style.marginTop = "4px";
+      w.appendChild(p);
+    });
+    warningsDiv.appendChild(w);
+  }
+
+  if (allRecords.length === 0) {
+    const err = document.createElement("div");
+    err.className = "error";
+    err.textContent = "No records could be parsed. Check that the paste includes REGISTERED AGENTS INC as the agent name.";
+    warningsDiv.appendChild(err);
+    resultsDiv.classList.add("visible");
+    return;
+  }
+
+  const csvLines = [
+    "Record No,Entity Type,Entity Status,Assoc Type,Registry Number,Name Status,Name"
+  ];
+  allRecords.forEach((rec, idx) => {
+    const row = [
+      idx + 1,
+      "UNK",
+      rec.entityStatus,
+      "AGT",
+      rec.registryNumber,
+      "CUR",
+      rec.entityName,
+    ].map(escapeCSV).join(",");
+    csvLines.push(row);
+  });
+  const csvText = csvLines.join("\n") + "\n";
+
+  const parts = listDate.split("-");
+  const dateFmt = `${parts[1]}-${parts[2]}-${parts[0]}`;
+  const filename = `${state}_Resignation_Entities_-_${dateFmt}.csv`;
+
+  downloadArea.innerHTML = "";
+  const success = document.createElement("div");
+  success.className = "success";
+  success.innerHTML = `<strong>Ready to download.</strong> Filename: <code>${filename}</code>`;
+  downloadArea.appendChild(success);
+
+  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const dl = document.createElement("a");
+  dl.href = url;
+  dl.download = filename;
+  dl.textContent = "Download CSV";
+  dl.style.display = "inline-block";
+  dl.style.background = "#2e5847";
+  dl.style.color = "white";
+  dl.style.padding = "10px 20px";
+  dl.style.borderRadius = "4px";
+  dl.style.textDecoration = "none";
+  dl.style.fontWeight = "600";
+  dl.style.marginTop = "12px";
+  downloadArea.appendChild(dl);
+
+  resultsDiv.classList.add("visible");
+});
+</script>
+</body>
+</html>
